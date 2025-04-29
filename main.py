@@ -1,7 +1,7 @@
 import pandas as pd
 
 # Fungsi keanggotaan segitiga
-def triangular_membership(x, a, b, c):
+def keanggotaan_segitiga(x, a, b, c):
     if x <= a or x >= c:
         return 0
     elif a < x <= b:
@@ -9,78 +9,76 @@ def triangular_membership(x, a, b, c):
     elif b < x < c:
         return (c - x) / (c - b)
 
-# Proses Fuzzification untuk Pelayanan
-def fuzzify_service(value):
+# Proses Fuzzifikasi untuk Pelayanan
+def fuzzifikasi_pelayanan(nilai):
     # Kategori keanggotaan untuk pelayanan
-    poor = triangular_membership(value, 0, 0, 50)
-    average = triangular_membership(value, 30, 50, 70)
-    good = triangular_membership(value, 50, 100, 100)
-    return {"poor": poor, "average": average, "good": good}
+    buruk = keanggotaan_segitiga(nilai, 0, 0, 50)
+    sedang = keanggotaan_segitiga(nilai, 30, 50, 70)
+    baik = keanggotaan_segitiga(nilai, 50, 100, 100)
+    return {"buruk": buruk, "sedang": sedang, "baik": baik}
 
-# Proses Fuzzification untuk harga
-def fuzzify_price(value):
+# Proses Fuzzifikasi untuk harga
+def fuzzifikasi_harga(nilai):
     # Kategori keanggotaan untuk harga
-    cheap = triangular_membership(value, 25000, 25000, 40000)
-    moderate = triangular_membership(value, 30000, 40000, 50000)
-    expensive = triangular_membership(value, 40000, 55000, 55000)
-    return {"cheap": cheap, "moderate": moderate, "expensive": expensive}
+    murah = keanggotaan_segitiga(nilai, 25000, 25000, 40000)
+    sedang = keanggotaan_segitiga(nilai, 30000, 40000, 50000)
+    mahal = keanggotaan_segitiga(nilai, 40000, 55000, 55000)
+    return {"murah": murah, "sedang": sedang, "mahal": mahal}
 
 # Proses Inferensi Fuzzy
-def fuzzy_inference(service_fuzzy, price_fuzzy):
+def inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy):
     # Aturan fuzzy
-    rule1 = min(service_fuzzy["good"], price_fuzzy["cheap"])  # Layak tinggi
-    rule2 = min(service_fuzzy["average"], price_fuzzy["moderate"])  # Layak sedang
-    rule3 = min(service_fuzzy["poor"], price_fuzzy["expensive"])  # Layak rendah
-    return {"high": rule1, "medium": rule2, "low": rule3}
+    aturan1 = min(pelayanan_fuzzy["baik"], harga_fuzzy["murah"])  # Layak tinggi
+    aturan2 = min(pelayanan_fuzzy["sedang"], harga_fuzzy["sedang"])  # Layak sedang
+    aturan3 = min(pelayanan_fuzzy["buruk"], harga_fuzzy["mahal"])  # Layak rendah
+    return {"tinggi": aturan1, "sedang": aturan2, "rendah": aturan3}
 
-# Proses Defuzzification menggunakan Centroid
-def defuzzify(output_fuzzy):
-    numerator = (
-        output_fuzzy["low"] * 25 +
-        output_fuzzy["medium"] * 50 +
-        output_fuzzy["high"] * 75
+# Proses Defuzzifikasi menggunakan Centroid
+def defuzzifikasi(output_fuzzy):
+    pembilang = (
+        output_fuzzy["rendah"] * 25 +
+        output_fuzzy["sedang"] * 50 +
+        output_fuzzy["tinggi"] * 75
     )
-    denominator = (
-        output_fuzzy["low"] +
-        output_fuzzy["medium"] +
-        output_fuzzy["high"]
+    penyebut = (
+        output_fuzzy["rendah"] +
+        output_fuzzy["sedang"] +
+        output_fuzzy["tinggi"]
     )
-    return numerator / denominator if denominator != 0 else 0
+    return pembilang / penyebut if penyebut != 0 else 0
 
 # Membaca data dari file Excel
-# Komentar: Proses ini menggunakan pandas untuk membaca file xlsx
-def read_excel(file_path):
+def baca_excel(file_path):
     data = pd.read_excel(file_path)
     return data
 
 # Menyimpan output ke file Excel
-# Komentar: Fungsi ini menyimpan data ke file peringkat.xlsx
-def save_to_excel(file_path, data):
+def simpan_ke_excel(file_path, data):
     data.to_excel(file_path, index=False)
 
-# Main program
+# Program utama
 if __name__ == "__main__":
     # Membaca data restoran
-    input_file = 'restoran.xlsx'
-    output_file = 'peringkat.xlsx'
-    data = read_excel(input_file)
+    file_input = 'restoran.xlsx'
+    file_output = 'peringkat.xlsx'
+    data = baca_excel(file_input)
 
     # Proses fuzzy untuk setiap restoran
-    scores = []
-    for _, row in data.iterrows():
-        service_fuzzy = fuzzify_service(row['Pelayanan'])
-        price_fuzzy = fuzzify_price(row['harga'])
-        output_fuzzy = fuzzy_inference(service_fuzzy, price_fuzzy)
-        score = defuzzify(output_fuzzy)
-        scores.append(score)
+    skor = []
+    for _, baris in data.iterrows():
+        pelayanan_fuzzy = fuzzifikasi_pelayanan(baris['Pelayanan'])
+        harga_fuzzy = fuzzifikasi_harga(baris['harga'])
+        output_fuzzy = inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy)
+        nilai_skor = defuzzifikasi(output_fuzzy)
+        skor.append(nilai_skor)
 
     # Tambahkan skor ke DataFrame
-    data['Score'] = scores
+    data['Skor'] = skor
 
     # Pilih 5 restoran terbaik
-    top_5 = data.nlargest(5, 'Score')
+    lima_terbaik = data.nlargest(5, 'Skor')
 
     # Simpan ke file output
-    save_to_excel(output_file, top_5)
+    simpan_ke_excel(file_output, lima_terbaik)
 
-    print(f"Peringkat 5 restoran terbaik berhasil disimpan ke file {output_file}.")
+    print(f"Peringkat 5 restoran terbaik berhasil disimpan ke file {file_output}.")
