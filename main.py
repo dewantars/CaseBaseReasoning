@@ -25,7 +25,7 @@ def fuzzifikasi_harga(nilai):
     mahal = keanggotaan_segitiga(nilai, 40000, 55000, 55000)
     return {"murah": murah, "sedang": sedang, "mahal": mahal}
 
-# Proses Inferensi Fuzzy
+# Proses Inferensi Fuzzy dengan model Mamdani
 def inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy):
     # Aturan fuzzy
     aturan1 = min(pelayanan_fuzzy["baik"], harga_fuzzy["murah"])  # Layak tinggi
@@ -33,18 +33,22 @@ def inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy):
     aturan3 = min(pelayanan_fuzzy["buruk"], harga_fuzzy["mahal"])  # Layak rendah
     return {"tinggi": aturan1, "sedang": aturan2, "rendah": aturan3}
 
+# Proses Agregasi Fuzzy
+def agregasi_fuzzy(output_fuzzy):
+    # Fungsi keanggotaan keluaran
+    domain = range(0, 101)  # Asumsikan domain keluaran adalah 0-100
+    tinggi = [min(output_fuzzy["tinggi"], keanggotaan_segitiga(x, 70, 100, 100)) for x in domain]
+    sedang = [min(output_fuzzy["sedang"], keanggotaan_segitiga(x, 40, 50, 60)) for x in domain]
+    rendah = [min(output_fuzzy["rendah"], keanggotaan_segitiga(x, 0, 25, 50)) for x in domain]
+
+    # Agregasi dengan maximum
+    hasil_agregasi = [max(rendah[i], sedang[i], tinggi[i]) for i in range(len(domain))]
+    return domain, hasil_agregasi
+
 # Proses Defuzzifikasi menggunakan Centroid
-def defuzzifikasi(output_fuzzy):
-    pembilang = (
-        output_fuzzy["rendah"] * 25 +
-        output_fuzzy["sedang"] * 50 +
-        output_fuzzy["tinggi"] * 75
-    )
-    penyebut = (
-        output_fuzzy["rendah"] +
-        output_fuzzy["sedang"] +
-        output_fuzzy["tinggi"]
-    )
+def defuzzifikasi_mamdani(domain, hasil_agregasi):
+    pembilang = sum(domain[i] * hasil_agregasi[i] for i in range(len(domain)))
+    penyebut = sum(hasil_agregasi)
     return pembilang / penyebut if penyebut != 0 else 0
 
 # Membaca data dari file Excel
@@ -69,7 +73,8 @@ if __name__ == "__main__":
         pelayanan_fuzzy = fuzzifikasi_pelayanan(baris['Pelayanan'])
         harga_fuzzy = fuzzifikasi_harga(baris['harga'])
         output_fuzzy = inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy)
-        nilai_skor = defuzzifikasi(output_fuzzy)
+        domain, hasil_agregasi = agregasi_fuzzy(output_fuzzy)
+        nilai_skor = defuzzifikasi_mamdani(domain, hasil_agregasi)
         skor.append(nilai_skor)
 
     # Tambahkan skor ke DataFrame
