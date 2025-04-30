@@ -5,9 +5,9 @@ def keanggotaan_segitiga(x, a, b, c):
     if x <= a or x >= c:
         return 0
     elif a < x <= b:
-        return (x - a) / (b - a)
+        return (x - a) / (b - a) if (b - a) != 0 else 1
     elif b < x < c:
-        return (c - x) / (c - b)
+        return (c - x) / (c - b) if (c - b) != 0 else 1
 
 # Proses Fuzzifikasi untuk Pelayanan
 def fuzzifikasi_pelayanan(nilai):
@@ -27,11 +27,34 @@ def fuzzifikasi_harga(nilai):
 
 # Proses Inferensi Fuzzy dengan model Mamdani
 def inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy):
-    # Aturan fuzzy
-    aturan1 = min(pelayanan_fuzzy["baik"], harga_fuzzy["murah"])  # Layak tinggi
-    aturan2 = min(pelayanan_fuzzy["sedang"], harga_fuzzy["sedang"])  # Layak sedang
-    aturan3 = min(pelayanan_fuzzy["buruk"], harga_fuzzy["mahal"])  # Layak rendah
-    return {"tinggi": aturan1, "sedang": aturan2, "rendah": aturan3}
+    aturan = {
+        "rendah": [],
+        "sedang": [],
+        "tinggi": []
+    }
+
+    # Kombinasi aturan:
+    # Baik
+    aturan["tinggi"].append(min(pelayanan_fuzzy["baik"], harga_fuzzy["murah"]))
+    aturan["tinggi"].append(min(pelayanan_fuzzy["baik"], harga_fuzzy["sedang"]))
+    aturan["sedang"].append(min(pelayanan_fuzzy["baik"], harga_fuzzy["mahal"]))
+
+    # Sedang
+    aturan["tinggi"].append(min(pelayanan_fuzzy["sedang"], harga_fuzzy["murah"]))
+    aturan["sedang"].append(min(pelayanan_fuzzy["sedang"], harga_fuzzy["sedang"]))
+    aturan["rendah"].append(min(pelayanan_fuzzy["sedang"], harga_fuzzy["mahal"]))
+
+    # Buruk
+    aturan["sedang"].append(min(pelayanan_fuzzy["buruk"], harga_fuzzy["murah"]))
+    aturan["rendah"].append(min(pelayanan_fuzzy["buruk"], harga_fuzzy["sedang"]))
+    aturan["rendah"].append(min(pelayanan_fuzzy["buruk"], harga_fuzzy["mahal"]))
+
+    return {
+        "tinggi": max(aturan["tinggi"]),
+        "sedang": max(aturan["sedang"]),
+        "rendah": max(aturan["rendah"])
+    }
+
 
 # Proses Agregasi Fuzzy
 def agregasi_fuzzy(output_fuzzy):
@@ -75,6 +98,13 @@ if __name__ == "__main__":
         output_fuzzy = inferensi_fuzzy(pelayanan_fuzzy, harga_fuzzy)
         domain, hasil_agregasi = agregasi_fuzzy(output_fuzzy)
         nilai_skor = defuzzifikasi_mamdani(domain, hasil_agregasi)
+        # Tampilkan hasil ke konsol
+        print(f"\nID Pelanggan: {baris['id Pelanggan']}")
+        print(f"Pelayanan: {baris['Pelayanan']}, Harga: {baris['harga']}")
+        print("Fuzzifikasi Pelayanan:", pelayanan_fuzzy)
+        print("Fuzzifikasi Harga:", harga_fuzzy)
+        print("Inferensi Fuzzy:", output_fuzzy)
+        print("Skor Defuzzifikasi:", nilai_skor)
         skor.append(nilai_skor)
 
     # Tambahkan skor ke DataFrame
