@@ -61,8 +61,8 @@ def agregasi_fuzzy(output_fuzzy):
     # Fungsi keanggotaan keluaran
     domain = range(0, 101)  # Asumsikan domain keluaran adalah 0-100
     tinggi = [min(output_fuzzy["tinggi"], keanggotaan_segitiga(x, 70, 100, 100)) for x in domain]
-    sedang = [min(output_fuzzy["sedang"], keanggotaan_segitiga(x, 40, 50, 60)) for x in domain]
-    rendah = [min(output_fuzzy["rendah"], keanggotaan_segitiga(x, 0, 25, 50)) for x in domain]
+    sedang = [min(output_fuzzy["sedang"], keanggotaan_segitiga(x, 20, 50, 80)) for x in domain]
+    rendah = [min(output_fuzzy["rendah"], keanggotaan_segitiga(x, 0, 25, 30)) for x in domain]
 
     # Agregasi dengan maximum
     hasil_agregasi = [max(rendah[i], sedang[i], tinggi[i]) for i in range(len(domain))]
